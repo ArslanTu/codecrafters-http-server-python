@@ -137,12 +137,9 @@ class Server:
             return
         with open(file_path, "r") as f:
             file_content = f.read()
-        client_socket.send(
-            b"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: "
-            + str(len(file_content)).encode()
-            + b"\r\n\r\n"
-            + file_content.encode()
-        )
+        data = b"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: " + str(len(file_content)).encode() + b"\r\n\r\n" + file_content.encode()
+        client_socket.send(data)
+        print(data, flush=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
