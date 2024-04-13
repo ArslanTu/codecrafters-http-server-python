@@ -131,14 +131,14 @@ class Server:
     @staticmethod
     def _stage_7(client_socket: socket.socket, req_dict: Dict[str, str], directory: str=None):
         if directory is None:
-            client_socket.sendall(b"HTTP/1.1 404 Not Found dir\r\n\r\n")
+            client_socket.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
             client_socket.close()
             return
     
         file_name = req_dict["Path"][len("/file/"):]
         file_path = os.path.join(directory, file_name)
         if not os.path.exists(file_path):
-            client_socket.sendall(b"HTTP/1.1 404 Not Found file\r\n\r\n")
+            client_socket.sendall(b"HTTP/1.1 404 Not Found file\r\n\r\n" + file_path.encode())
             client_socket.close()
             return
 
