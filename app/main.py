@@ -9,8 +9,20 @@ def main():
     # Uncomment this to pass the first stage
 
     server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
+
+    # stage 2
     client_socket, client_address = server_socket.accept()
     client_socket.send(b"HTTP/1.1 200 OK\r\n\r\n")
+
+    # stage 3
+    req = client_socket.recv(4096).decode("utf-8")
+    req_lines = req.split("\r\n")
+    req_start_line = req_lines[0]
+    req_path = req_start_line.split(" ")[1]
+    if req_path == "/":
+        client_socket.send(b"HTTP/1.1 200 OK\r\n\r\n")
+    else:
+        client_socket.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
 
 
 if __name__ == "__main__":
