@@ -35,7 +35,8 @@ class Server:
                 client_socket, client_address = await asyncio.to_thread(
                     self._server_socket.accept
                 )
-                req: str = await asyncio.to_thread(client_socket.recv, 4096).decode("utf-8")
+                raw_req = await asyncio.to_thread(client_socket.recv, 4096)
+                req = raw_req.decode("utf-8")
                 await asyncio.to_thread(
                         self._process_req, client_socket, client_address, req
                 )
