@@ -58,9 +58,13 @@ class Server:
         # process in stage 5
         elif req_dict["Path"].startswith("/user-agent"):
             self._stage_5(client_socket, req_dict)
-        # process in stage 7
-        elif req_dict["Path"].startswith("/file"):
-            self._stage_7(client_socket, req_dict, self._directory)
+        elif req_dict["Path"].startswith("/files/"):
+            # process in stage 7
+            if req_dict["Method"] == "GET":
+                self._stage_7(client_socket, req_dict, self._directory)
+            # process in satge 8
+            elif req_dict["Method"] == "POST":
+                self._stage_8(client_socket, req_dict, self._directory)
         # process in stage 2 or 3
         else:
             self._stage_2_3(client_socket, req_dict)
@@ -92,9 +96,13 @@ class Server:
             try:
                 sep_idx = line.index(":")
             except ValueError:
-                raise WrongRequestFormatError
+                break
             else:
                 req_dict[line[:sep_idx]] = line[sep_idx + 2 :]
+        
+        content_len = req_dict.get("Content-Length", 0)
+        if content_len > 0:
+            req_dict["Content"] = req[len(req) - content_len:]
 
         return req_dict
 
@@ -135,7 +143,7 @@ class Server:
             client_socket.close()
             return
     
-        file_name = req_dict["Path"][len("/file/") + 1:]  # can't contain leading '/'
+        file_name = req_dict["Path"][len("/files/"):]  # can't contain leading '/'
         file_path = os.path.join(directory, file_name)
         if not os.path.exists(file_path):
             client_socket.sendall(b"HTTP/1.1 404 Not Found file\r\n\r\n")
@@ -149,6 +157,24 @@ class Server:
             + b"Content-Type: application/octet-stream\r\n"
             + b"Content-Length: " + str(len(file_content)).encode() + b"\r\n\r\n"
             + file_content.encode(),
+        )
+        client_socket.close()
+
+    @staticmethod
+    def _stage_8(client_socket: socket.socket, req_dict: Dict[str, str], directory: str=None):
+        if directory is None:
+            client_socket.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
+            client_socket.close()
+            return
+    
+        file_name = req_dict["Path"][len("/files/"):]
+        file_path = os.path.join(directory, file_name)
+
+        with open(file_path, "w") as f:
+            f.write(req_dict["Content"])
+
+        client_socket.sendall(
+            b"HTTP/1.1 201 Created\r\n\r\n"
         )
         client_socket.close()
 
