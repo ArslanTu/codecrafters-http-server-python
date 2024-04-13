@@ -100,7 +100,7 @@ class Server:
             else:
                 req_dict[line[:sep_idx]] = line[sep_idx + 2 :]
         
-        content_len = req_dict.get("Content-Length", 0)
+        content_len = int(req_dict.get("Content-Length", '0'))
         if content_len > 0:
             req_dict["Content"] = req[len(req) - content_len:]
 
@@ -167,6 +167,9 @@ class Server:
             client_socket.close()
             return
     
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
         file_name = req_dict["Path"].removeprefix("/files/")  # can't contain leading '/'
         file_path = os.path.join(directory, file_name)
 
