@@ -4,7 +4,6 @@ from typing import Dict, List
 import asyncio
 import sys
 import os
-import gzip
 
 
 class WrongRequestFormatError(Exception):
@@ -102,29 +101,32 @@ class Server:
     @staticmethod
     def _stage_2_3(client_socket: socket.socket, req_dict: Dict[str, str]):
         if req_dict["Path"] == "/":
-            client_socket.send(b"HTTP/1.1 200 OK\r\n\r\n")
+            client_socket.sendall(b"HTTP/1.1 200 OK\r\n\r\n")
         else:
-            client_socket.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
+            client_socket.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
+        client_socket.close()
 
     @staticmethod
     def _stage_4(client_socket: socket.socket, req_dict: Dict[str, str]):
         res_body = req_dict["Path"][len("/echo/") :]
-        client_socket.send(
+        client_socket.sendall(
             b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: "
             + str(len(res_body)).encode()
             + b"\r\n\r\n"
             + res_body.encode()
         )
+        client_socket.close()
 
     @staticmethod
     def _stage_5(client_socket: socket.socket, req_dict: Dict[str, str]):
         res_body = req_dict["User-Agent"]
-        client_socket.send(
+        client_socket.sendall(
             b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: "
             + str(len(res_body)).encode()
             + b"\r\n\r\n"
             + res_body.encode()
         )
+        client_socket.close()
 
     @staticmethod
     def _stage_7(self, client_socket: socket.socket, req_dict: Dict[str, str]):
@@ -143,8 +145,9 @@ class Server:
             b"HTTP/1.1 200 OK\r\n"
             + b"Content-Type: application/octet-stream\r\n"
             + b"Content-Length: " + str(len(file_content)).encode() + b"\r\n\r\n"
-            + gzip.compress(file_content.encode()),
+            + file_content.encode(),
         )
+        client_socket.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
