@@ -1,5 +1,16 @@
 # Uncomment this to pass the first stage
 import socket
+from typing import Dict, List
+
+
+class WrongRequestFormatError(Exception):
+    def __init__(self, message: str = "Wrong request format"):
+        """
+        An error type to indicate wrong request format
+        :type message: error msg
+        """
+        self.message: str = message
+        super().__init__(self.message)
 
 
 def main():
@@ -16,19 +27,56 @@ def main():
 
     # stage 3
     req = client_socket.recv(4096).decode("utf-8")
-    req_lines = req.split("\r\n")
-    req_start_line = req_lines[0]
-    req_path = req_start_line.split(" ")[1]
-    if req_path.startswith("/echo/"):
-        # process in stage 4
-        pass
-    elif req_path == "/":
+    req_dict = parse_req(req)
+    # process in stage 4
+    if req_dict["Path"].startswith("/echo/"):
+        stage_4(client_socket, req_dict)
+    # process in stage 2 or 3
+    else:
+        stage_2_3(client_socket, req_dict)
+        
+
+def parse_req(req: str) -> Dict[str, str]:
+    """
+    parse request and return dict
+    :param req:
+    :return:
+    """
+    req_dict: Dict[str, str] = {}
+    req_lines: List[str] = req.split("\r\n")
+
+    # start line
+    start_line: str = req_lines[0]
+    try:
+        req_dict["Method"], req_dict["Path"], req_dict["Protocol"] = start_line.split(" ")
+    except ValueError:
+        raise WrongRequestFormatError
+
+    # content
+    req_dict["Content"] = req_lines[-1]
+
+    # header
+    for line in req_lines[1:-1]:
+        if len(line) < 1:
+            continue
+        try:
+            k, v = line.split(":")
+        except ValueError:
+            raise WrongRequestFormatError
+        req_dict[k.strip()] = v.strip()
+
+    return req_dict
+
+
+def stage_2_3(client_socket: socket, req_dict: Dict[str, str]):
+    if req_dict["Path"] == "/":
         client_socket.send(b"HTTP/1.1 200 OK\r\n\r\n")
     else:
         client_socket.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
 
-    # stage 4
-    res_body = req_path[len("/echo/"):]
+
+def stage_4(client_socket: socket, req_dict: Dict[str, str]):
+    res_body = req_dict["Path"][len("/echo/"):]
     client_socket.send(
         b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: "
         + str(len(res_body)).encode()
