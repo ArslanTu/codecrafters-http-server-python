@@ -27,8 +27,8 @@ class Server:
     def __init__(
         self, host: str = "localhost", port: int = 4221, concurrency: int = 128
     ):
-        self._concurrency = concurrency
-        self._server_socket = socket.create_server((host, port), reuse_port=True)
+        self._concurrency: int = concurrency
+        self._server_socket: socket.socket = socket.create_server((host, port), reuse_port=True)
 
     async def start(self):
         loop = asyncio.get_event_loop()
