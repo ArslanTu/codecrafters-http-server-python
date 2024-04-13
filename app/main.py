@@ -2,6 +2,8 @@
 import socket
 from typing import Dict, List
 import asyncio
+import sys
+
 
 class WrongRequestFormatError(Exception):
     def __init__(self, message: str = "Wrong request format"):
@@ -30,15 +32,11 @@ class Server:
 
     async def start(self):
         loop = asyncio.get_event_loop()
-        tasks = [loop.create_task(self.worker()) for _ in range(self._concurrency)]
+        [loop.create_task(self.worker()) for _ in range(self._concurrency)]
         try:
             loop.run_forever()
         except KeyboardInterrupt:
-            # don't quit right now, should wait for "finally"
-            pass
-        finally:
-            [task.cancel() for task in tasks]
-            loop.close()
+            sys.exit()
 
     async def worker(self):
         while True:
