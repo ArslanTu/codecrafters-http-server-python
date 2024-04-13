@@ -1,7 +1,8 @@
 # Uncomment this to pass the first stage
-import asyncio
 import socket
 from typing import Dict, List
+from threading import Thread
+
 
 class WrongRequestFormatError(Exception):
     def __init__(self, message: str = "Wrong request format"):
@@ -18,30 +19,30 @@ def main():
     print("Logs from your program will appear here!")
 
     server = Server()
-    asyncio.run(server.start())
+    server.start()
 
 
 class Server:
     def __init__(
         self, host: str = "localhost", port: int = 4221, concurrency: int = 8
     ):
-        self._semaphore = asyncio.Semaphore(concurrency)
+        self._concurrency = concurrency
         self._server_socket = socket.create_server((host, port), reuse_port=True)
 
-    async def start(self):
-        tasks = [asyncio.create_task(self.worker()) for _ in range(8)]
-        await asyncio.gather(*tasks)
+    def start(self):
+        threads = []
+        for _ in range(self._concurrency):
+            thread = Thread(target=self.worker)
+            threads.append(thread)
+            thread.start()
+        [thread.join() for thread in threads]
         self._server_socket.close()
 
-    async def worker(self):
-        client_socket, client_address = await asyncio.to_thread(
-            self._server_socket.accept
-        )
-        raw_req = await asyncio.to_thread(client_socket.recv, 4096)
-        req = raw_req.decode("utf-8")
-        await asyncio.to_thread(
-                self._process_req, client_socket, client_address, req
-        )
+    def worker(self):
+        client_socket, client_address = self._server_socket.accept()
+        req = client_socket.recv(4096).decode("utf-8")
+        self._process_req(client_socket, client_address, req)
+
 
     def _process_req(self, client_socket: socket.socket, client_address, req: str):
         req_dict: dict[str, str] = self.parse_req(req)
