@@ -47,9 +47,6 @@ class Server:
     def handler(self):
         client_socket, client_address = self._server_socket.accept()
         req = client_socket.recv(4096).decode("utf-8")
-        self._process_req(client_socket, client_address, req)
-
-    def _process_req(self, client_socket: socket.socket, client_address, req: str):
         req_dict: dict[str, str] = self.parse_req(req)
 
         # process in stage 4
