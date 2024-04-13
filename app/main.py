@@ -27,23 +27,21 @@ class Server:
     ):
         self._semaphore = asyncio.Semaphore(concurrency)
         self._server_socket = socket.create_server((host, port), reuse_port=True)
-        self._done_jobs = 0
-        self._lock = asyncio.Lock()
 
     async def start(self):
-        while self._done_jobs < 2:
-            async with self._semaphore:
-                client_socket, client_address = await asyncio.to_thread(
-                    self._server_socket.accept
-                )
-                raw_req = await asyncio.to_thread(client_socket.recv, 4096)
-                req = raw_req.decode("utf-8")
-                await asyncio.to_thread(
-                        self._process_req, client_socket, client_address, req
-                )
-                async with self._lock:
-                    self._done_jobs += 1
+        tasks = [asyncio.create_task(self.worker()) for _ in range(100)]
+        await asyncio.gather(*tasks)
         self._server_socket.close()
+
+    async def worker(self):
+        client_socket, client_address = await asyncio.to_thread(
+            self._server_socket.accept
+        )
+        raw_req = await asyncio.to_thread(client_socket.recv, 4096)
+        req = raw_req.decode("utf-8")
+        await asyncio.to_thread(
+                self._process_req, client_socket, client_address, req
+        )
 
     def _process_req(self, client_socket: socket.socket, client_address, req: str):
         req_dict: dict[str, str] = self.parse_req(req)
