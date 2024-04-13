@@ -23,18 +23,24 @@ def main():
 
 
 class Server:
-    def __init__(self, host: str = "localhost", port: int = 4221, concurrency: int = 100):
+    def __init__(
+        self, host: str = "localhost", port: int = 4221, concurrency: int = 100
+    ):
         self._semaphore = asyncio.Semaphore(concurrency)
         self._server_socket = socket.create_server((host, port), reuse_port=True)
 
     async def start(self):
         while True:
-            client_socket, client_address = self._server_socket.accept()
-            req: str = client_socket.recv(4096).decode("utf-8")
             async with self._semaphore:
-                await asyncio.to_thread(self._process_req, client_socket, client_address, req)
+                client_socket, client_address = await asyncio.to_thread(
+                    self._server_socket.accept
+                )
+                req: str = await asyncio.to_thread(client_socket.recv, 4096).decode("utf-8")
+                await asyncio.to_thread(
+                        self._process_req, client_socket, client_address, req
+                )
 
-    def _process_req(self, client_socket: socket, client_address, req: str):
+    def _process_req(self, client_socket: socket.socket, client_address, req: str):
         req_dict: dict[str, str] = self.parse_req(req)
 
         # process in stage 4
@@ -60,7 +66,9 @@ class Server:
         # start line
         start_line: str = req_lines[0]
         try:
-            req_dict["Method"], req_dict["Path"], req_dict["Protocol"] = start_line.split(" ")
+            req_dict["Method"], req_dict["Path"], req_dict["Protocol"] = (
+                start_line.split(" ")
+            )
         except ValueError:
             raise WrongRequestFormatError
 
@@ -73,20 +81,20 @@ class Server:
             except ValueError:
                 raise WrongRequestFormatError
             else:
-                req_dict[line[:sep_idx]] = line[sep_idx + 2:]
+                req_dict[line[:sep_idx]] = line[sep_idx + 2 :]
 
         return req_dict
 
     @staticmethod
-    def _stage_2_3(client_socket: socket, req_dict: Dict[str, str]):
+    def _stage_2_3(client_socket: socket.socket, req_dict: Dict[str, str]):
         if req_dict["Path"] == "/":
             client_socket.send(b"HTTP/1.1 200 OK\r\n\r\n")
         else:
             client_socket.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
 
     @staticmethod
-    def _stage_4(client_socket: socket, req_dict: Dict[str, str]):
-        res_body = req_dict["Path"][len("/echo/"):]
+    def _stage_4(client_socket: socket.socket, req_dict: Dict[str, str]):
+        res_body = req_dict["Path"][len("/echo/") :]
         client_socket.send(
             b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: "
             + str(len(res_body)).encode()
@@ -95,7 +103,7 @@ class Server:
         )
 
     @staticmethod
-    def _stage_5(client_socket: socket, req_dict: Dict[str, str]):
+    def _stage_5(client_socket: socket.socket, req_dict: Dict[str, str]):
         res_body = req_dict["User-Agent"]
         client_socket.send(
             b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: "
