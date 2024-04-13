@@ -60,7 +60,7 @@ class Server:
             self._stage_5(client_socket, req_dict)
         # process in stage 7
         elif req_dict["Path"].startswith("/file"):
-            self._stage_7(client_socket, req_dict)
+            self._stage_7(client_socket, req_dict, self._directory)
         # process in stage 2 or 3
         else:
             self._stage_2_3(client_socket, req_dict)
@@ -129,18 +129,21 @@ class Server:
         client_socket.close()
 
     @staticmethod
-    def _stage_7(self, client_socket: socket.socket, req_dict: Dict[str, str]):
-        if self._directory is None:
-            client_socket.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
+    def _stage_7(client_socket: socket.socket, req_dict: Dict[str, str], directory: str=None):
+        if directory is None:
+            client_socket.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
+            client_socket.close()
             return
+    
         file_name = req_dict["Path"][len("/file/"):]
-        file_path = os.path.join(self._directory, file_name)
+        file_path = os.path.join(directory, file_name)
         if not os.path.exists(file_path):
-            client_socket.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
+            client_socket.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
+            client_socket.close()
             return
+
         with open(file_path, "r") as f:
             file_content = f.read()
-        print(file_content, flush=True)
         client_socket.sendall(
             b"HTTP/1.1 200 OK\r\n"
             + b"Content-Type: application/octet-stream\r\n"
