@@ -4,6 +4,7 @@ from typing import Dict, List
 import asyncio
 import sys
 import os
+import gzip
 
 
 class WrongRequestFormatError(Exception):
@@ -76,7 +77,7 @@ class Server:
         req_dict: Dict[str, str] = {}
         req_lines: List[str] = req.split("\r\n")
 
-        # start line
+        # status line
         start_line: str = req_lines[0]
         try:
             req_dict["Method"], req_dict["Path"], req_dict["Protocol"] = (
@@ -138,11 +139,11 @@ class Server:
         with open(file_path, "r") as f:
             file_content = f.read()
         print(file_content, flush=True)
-        client_socket.send(
+        client_socket.sendall(
             b"HTTP/1.1 200 OK\r\n"
             + b"Content-Type: application/octet-stream\r\n"
             + b"Content-Length: " + str(len(file_content)).encode() + b"\r\n\r\n"
-            + file_content.encode(),
+            + gzip.compress(file_content.encode()),
         )
 
 if __name__ == "__main__":
