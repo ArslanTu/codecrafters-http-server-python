@@ -2,7 +2,7 @@
 import socket
 from typing import Dict, List
 from threading import Thread
-
+import asyncio
 
 class WrongRequestFormatError(Exception):
     def __init__(self, message: str = "Wrong request format"):
@@ -19,7 +19,8 @@ def main():
     print("Logs from your program will appear here!")
 
     server = Server()
-    server.start()
+    # server.start()
+    asyncio.run(server.a_start())
 
 
 class Server:
@@ -36,6 +37,10 @@ class Server:
             threads.append(thread)
             thread.start()
         [thread.join() for thread in threads]
+        self._server_socket.close()
+
+    async def a_start(self):
+        await asyncio.wait_for(asyncio.gather(*[self.a_worker() for _ in range(self._concurrency)]), timeout=120)
         self._server_socket.close()
 
     def worker(self):
