@@ -143,7 +143,7 @@ class Server:
             client_socket.close()
             return
     
-        file_name = req_dict["Path"][len("/files/"):]  # can't contain leading '/'
+        file_name = req_dict["Path"].removeprefix("/files/")  # can't contain leading '/'
         file_path = os.path.join(directory, file_name)
         if not os.path.exists(file_path):
             client_socket.sendall(b"HTTP/1.1 404 Not Found file\r\n\r\n")
@@ -167,7 +167,7 @@ class Server:
             client_socket.close()
             return
     
-        file_name = req_dict["Path"][len("/files/"):]
+        file_name = req_dict["Path"].removeprefix("/files/")  # can't contain leading '/'
         file_path = os.path.join(directory, file_name)
 
         with open(file_path, "w") as f:
