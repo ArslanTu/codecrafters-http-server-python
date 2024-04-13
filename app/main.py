@@ -3,7 +3,6 @@ import asyncio
 import socket
 from typing import Dict, List
 
-
 class WrongRequestFormatError(Exception):
     def __init__(self, message: str = "Wrong request format"):
         """
@@ -28,9 +27,10 @@ class Server:
     ):
         self._semaphore = asyncio.Semaphore(concurrency)
         self._server_socket = socket.create_server((host, port), reuse_port=True)
+        self._done_jobs = 0
 
     async def start(self):
-        while True:
+        while self._done_jobs < 2:
             async with self._semaphore:
                 client_socket, client_address = await asyncio.to_thread(
                     self._server_socket.accept
@@ -53,6 +53,8 @@ class Server:
         # process in stage 2 or 3
         else:
             self._stage_2_3(client_socket, req_dict)
+        
+        self._done_jobs += 1
 
     @staticmethod
     def parse_req(req: str) -> Dict[str, str]:
