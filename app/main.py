@@ -1,7 +1,6 @@
 # Uncomment this to pass the first stage
 import socket
 from typing import Dict, List
-from threading import Thread
 import asyncio
 
 class WrongRequestFormatError(Exception):
@@ -19,35 +18,36 @@ def main():
     print("Logs from your program will appear here!")
 
     server = Server()
-    # server.start()
-    asyncio.run(server.a_start())
+    asyncio.run(server.start())
 
 
 class Server:
     def __init__(
-        self, host: str = "localhost", port: int = 4221, concurrency: int = 8
+        self, host: str = "localhost", port: int = 4221, concurrency: int = 128
     ):
         self._concurrency = concurrency
         self._server_socket = socket.create_server((host, port), reuse_port=True)
 
-    def start(self):
-        threads = []
-        for _ in range(self._concurrency):
-            thread = Thread(target=self.worker)
-            threads.append(thread)
-            thread.start()
-        [thread.join() for thread in threads]
-        self._server_socket.close()
+    async def start(self):
+        loop = asyncio.get_event_loop()
+        tasks = [loop.create_task(self.worker()) for _ in range(self._concurrency)]
+        try:
+            loop.run_forever()
+        except KeyboardInterrupt:
+            # don't quit right now, should wait for "finally"
+            pass
+        finally:
+            [task.cancel() for task in tasks]
+            loop.close()
 
-    async def a_start(self):
-        await asyncio.wait_for(asyncio.gather(*[asyncio.to_thread(self.worker) for _ in range(self._concurrency)]), timeout=120)
-        self._server_socket.close()
-
-    def worker(self):
+    async def worker(self):
+        while True:
+            await asyncio.to_thread(self.handler)
+    
+    def handler(self):
         client_socket, client_address = self._server_socket.accept()
         req = client_socket.recv(4096).decode("utf-8")
         self._process_req(client_socket, client_address, req)
-
 
     def _process_req(self, client_socket: socket.socket, client_address, req: str):
         req_dict: dict[str, str] = self.parse_req(req)
