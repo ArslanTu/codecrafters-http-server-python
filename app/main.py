@@ -146,7 +146,8 @@ class Server:
                             file_content,
                         ]
                     ).encode("utf-8")
-            client_socket.send(data)
+            # client_socket.send(data)
+            client_socket.sendall(data)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
