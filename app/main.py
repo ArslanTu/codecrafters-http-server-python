@@ -1,8 +1,9 @@
-# Uncomment this to pass the first stage
+import argparse
 import socket
 from typing import Dict, List
 import asyncio
 import sys
+import os
 
 
 class WrongRequestFormatError(Exception):
@@ -15,20 +16,21 @@ class WrongRequestFormatError(Exception):
         super().__init__(self.message)
 
 
-def main():
+def main(args):
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!")
 
-    server = Server()
+    server = Server(directory=args.directory)
     asyncio.run(server.start())
 
 
 class Server:
     def __init__(
-        self, host: str = "localhost", port: int = 4221, concurrency: int = 128
+        self, host: str = "localhost", port: int = 4221, concurrency: int = 128, directory: str = None
     ):
         self._concurrency: int = concurrency
         self._server_socket: socket.socket = socket.create_server((host, port), reuse_port=True)
+        self._directory = directory
 
     async def start(self):
         loop = asyncio.get_event_loop()
@@ -56,6 +58,9 @@ class Server:
         # process in stage 5
         elif req_dict["Path"].startswith("/user-agent"):
             self._stage_5(client_socket, req_dict)
+        # process in stage 7
+        elif req_dict["Path"].startswith("/file"):
+            self._stage_7(client_socket, req_dict)
         # process in stage 2 or 3
         else:
             self._stage_2_3(client_socket, req_dict)
@@ -120,6 +125,25 @@ class Server:
             + res_body.encode()
         )
 
+    @staticmethod
+    def _stage_7(self, client_socket: socket.socket, req_dict: Dict[str, str]):
+        file_name = req_dict["Path"][len("/file/"):]
+        file_path = os.path.join(self._directory, file_name)
+        if not os.path.exists(file_path):
+            client_socket.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
+            return
+        with open(file_path, "rb") as f:
+            file_content = f.read()
+        client_socket.send(
+            b"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: "
+            + str(len(file_content)).encode()
+            + b"\r\n\r\n"
+            + file_content
+        )
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--directory", type=str)
+
+    args = parser.parse_args()
+    main(args)
