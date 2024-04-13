@@ -135,10 +135,10 @@ class Server:
             client_socket.close()
             return
     
-        file_name = req_dict["Path"][len("/file/"):]
+        file_name = req_dict["Path"][len("/file/") + 1:]  # can't contain leading '/'
         file_path = os.path.join(directory, file_name)
         if not os.path.exists(file_path):
-            client_socket.sendall(b"HTTP/1.1 404 Not Found file\r\n\r\n" + directory.encode() + b"\r\n" + file_path.encode())
+            client_socket.sendall(b"HTTP/1.1 404 Not Found file\r\n\r\n")
             client_socket.close()
             return
 
