@@ -40,7 +40,7 @@ class Server:
         self._server_socket.close()
 
     async def a_start(self):
-        await asyncio.wait_for(asyncio.gather(*[self.a_worker() for _ in range(self._concurrency)]), timeout=120)
+        await asyncio.wait_for(asyncio.gather(*[self.worker() for _ in range(self._concurrency)]), timeout=120)
         self._server_socket.close()
 
     def worker(self):
