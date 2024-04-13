@@ -12,7 +12,7 @@ def main():
 
     # stage 2
     client_socket, client_address = server_socket.accept()
-    client_socket.send(b"HTTP/1.1 200 OK\r\n\r\n")
+    # client_socket.send(b"HTTP/1.1 200 OK\r\n\r\n")
 
     # stage 3
     req = client_socket.recv(4096).decode("utf-8")
