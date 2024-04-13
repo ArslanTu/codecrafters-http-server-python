@@ -127,6 +127,9 @@ class Server:
 
     @staticmethod
     def _stage_7(self, client_socket: socket.socket, req_dict: Dict[str, str]):
+        if self._directory is None:
+            client_socket.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
+            return
         file_name = req_dict["Path"][len("/file/"):]
         file_path = os.path.join(self._directory, file_name)
         if not os.path.exists(file_path):
