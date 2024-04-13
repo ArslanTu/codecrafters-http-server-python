@@ -19,10 +19,10 @@ def main():
     req_lines = req.split("\r\n")
     req_start_line = req_lines[0]
     req_path = req_start_line.split(" ")[1]
-    # if req_path == "/":
-    #     client_socket.send(b"HTTP/1.1 200 OK\r\n\r\n")
-    # else:
-    #     client_socket.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
+    if req_path == "/":
+        client_socket.send(b"HTTP/1.1 200 OK\r\n\r\n")
+    else:
+        client_socket.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
 
     # stage 4
     res_body = req_path[len("/echo/"):]
