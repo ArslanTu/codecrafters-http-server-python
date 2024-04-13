@@ -23,13 +23,13 @@ def main():
 
 class Server:
     def __init__(
-        self, host: str = "localhost", port: int = 4221, concurrency: int = 100
+        self, host: str = "localhost", port: int = 4221, concurrency: int = 8
     ):
         self._semaphore = asyncio.Semaphore(concurrency)
         self._server_socket = socket.create_server((host, port), reuse_port=True)
 
     async def start(self):
-        tasks = [asyncio.create_task(self.worker()) for _ in range(100)]
+        tasks = [asyncio.create_task(self.worker()) for _ in range(8)]
         await asyncio.gather(*tasks)
         self._server_socket.close()
 
