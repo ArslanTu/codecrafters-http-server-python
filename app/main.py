@@ -28,6 +28,7 @@ class Server:
         self._semaphore = asyncio.Semaphore(concurrency)
         self._server_socket = socket.create_server((host, port), reuse_port=True)
         self._done_jobs = 0
+        self._lock = asyncio.Lock()
 
     async def start(self):
         while self._done_jobs < 2:
@@ -40,6 +41,9 @@ class Server:
                 await asyncio.to_thread(
                         self._process_req, client_socket, client_address, req
                 )
+                async with self._lock:
+                    self._done_jobs += 1
+        self._server_socket.close()
 
     def _process_req(self, client_socket: socket.socket, client_address, req: str):
         req_dict: dict[str, str] = self.parse_req(req)
@@ -54,7 +58,6 @@ class Server:
         else:
             self._stage_2_3(client_socket, req_dict)
         
-        self._done_jobs += 1
 
     @staticmethod
     def parse_req(req: str) -> Dict[str, str]:
