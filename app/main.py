@@ -34,7 +34,7 @@ def main():
     # process in stage 2 or 3
     else:
         stage_2_3(client_socket, req_dict)
-        
+
 
 def parse_req(req: str) -> Dict[str, str]:
     """
@@ -52,18 +52,16 @@ def parse_req(req: str) -> Dict[str, str]:
     except ValueError:
         raise WrongRequestFormatError
 
-    # content
-    req_dict["Content"] = req_lines[-1]
-
     # header
-    for line in req_lines[1:-1]:
+    for line in req_lines[1:]:
         if len(line) < 1:
             continue
         try:
-            k, v = line.split(":")
+            sep_idx = line.index(":")
         except ValueError:
             raise WrongRequestFormatError
-        req_dict[k.strip()] = v.strip()
+        else:
+            req_dict[line[:sep_idx]] = line[sep_idx + 2:]
 
     return req_dict
 
