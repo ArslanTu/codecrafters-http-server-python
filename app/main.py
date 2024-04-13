@@ -30,7 +30,9 @@ def main():
     # stage 4
     res_body = req_path[len("/echo/"):]
     client_socket.send(
-        b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 3\r\n\r\n"
+        b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: "
+        + str(len(res_body)).encode()
+        + b"\r\n\r\n"
         + res_body.encode()
     )
 
