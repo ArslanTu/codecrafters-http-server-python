@@ -135,13 +135,13 @@ class Server:
         if not os.path.exists(file_path):
             client_socket.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
             return
-        with open(file_path, "rb") as f:
+        with open(file_path, "r") as f:
             file_content = f.read()
         client_socket.send(
             b"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: "
             + str(len(file_content)).encode()
             + b"\r\n\r\n"
-            + file_content
+            + file_content.encode()
         )
 
 if __name__ == "__main__":
