@@ -31,6 +31,9 @@ def main():
     # process in stage 4
     if req_dict["Path"].startswith("/echo/"):
         stage_4(client_socket, req_dict)
+    # process in stage 5
+    elif req_dict["Path"].startswith("/user-agent"):
+        stage_5(client_socket, req_dict)
     # process in stage 2 or 3
     else:
         stage_2_3(client_socket, req_dict)
@@ -82,6 +85,15 @@ def stage_4(client_socket: socket, req_dict: Dict[str, str]):
         + res_body.encode()
     )
 
+
+def stage_5(client_socket: socket, req_dict: Dict[str, str]):
+    res_body = req_dict["User-Agent"]
+    client_socket.send(
+        b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: "
+        + str(len(res_body)).encode()
+        + b"\r\n\r\n"
+        + res_body.encode()
+    )
 
 if __name__ == "__main__":
     main()
