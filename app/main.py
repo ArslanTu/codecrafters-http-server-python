@@ -138,7 +138,7 @@ class Server:
         file_name = req_dict["Path"][len("/file/"):]
         file_path = os.path.join(directory, file_name)
         if not os.path.exists(file_path):
-            client_socket.sendall(b"HTTP/1.1 404 Not Found file\r\n\r\n" + file_path.encode())
+            client_socket.sendall(b"HTTP/1.1 404 Not Found file\r\n\r\n" + directory.encode() + b"\r\n" + file_path.encode())
             client_socket.close()
             return
 
